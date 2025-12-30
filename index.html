@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TaskFlow Pro v12 - Alarm Master</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>TaskFlow Pro v15 - Ultimate</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -17,99 +19,122 @@
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { max-width: 1100px; margin: 0 auto; padding: 15px; }
         
-        header { text-align: center; padding: 15px 0; background: rgba(30, 41, 59, 0.5); }
-        .main-logo { max-width: 100px; height: auto; margin-bottom: 5px; }
+        header { text-align: center; padding: 20px 0; background: rgba(30, 41, 59, 0.5); }
+        .main-logo { max-width: 120px; height: auto; margin-bottom: 5px; }
         
-        .main-nav { display: flex; justify-content: center; gap: 5px; background: var(--card); padding: 8px; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #334155; }
-        .nav-btn { padding: 10px 15px; border-radius: 8px; border: none; background: transparent; color: var(--muted); cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.3s; }
+        /* Navigation */
+        .main-nav { display: flex; justify-content: center; gap: 8px; background: var(--card); padding: 10px; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #334155; }
+        .nav-btn { padding: 10px 18px; border-radius: 8px; border: none; background: transparent; color: var(--muted); cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.3s; }
         .nav-btn.active { background: var(--primary); color: white; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
-        .stat-card h2 { margin: 5px 0 0; font-size: 1.8rem; color: var(--primary); }
+        /* Dashboard Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--card); padding: 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .stat-card h2 { margin: 8px 0 0; font-size: 2rem; color: var(--primary); }
         .stat-card p { margin: 0; color: var(--muted); font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
 
+        /* Alarm Overlay & Activator */
+        #alarm-activator { background: var(--danger); color: white; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; font-size: 12px; }
+        #alarm-overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(239, 68, 68, 0.95); z-index: 9999; 
+            flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        }
+        .stop-btn { background: white; color: var(--danger); padding: 18px 40px; border-radius: 50px; font-size: 1.4rem; font-weight: bold; border: none; cursor: pointer; margin-top: 20px; }
+
+        /* Cards & Forms */
         .glass-card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
-        h3 { margin: 0 0 15px 0; font-size: 0.9rem; color: var(--primary); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
-
-        .page { display: none; animation: fadeIn 0.3s ease; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
+        h3 { margin: 0 0 15px 0; font-size: 1rem; color: var(--primary); border-bottom: 1px solid #334155; padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        
         input, select, button { width: 100%; padding: 12px; background: #334155; border: 1px solid #475569; color: white; border-radius: 10px; font-size: 14px; outline: none; box-sizing: border-box; }
-        button { background: var(--primary); cursor: pointer; border: none; font-weight: bold; }
         
-        .task-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 5px solid var(--primary); }
+        /* Task Cards */
+        .task-card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 5px solid var(--primary); animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
         .prio-Acil { border-left-color: var(--danger); }
+        .completed-card { border-left-color: var(--success); opacity: 0.8; }
         .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--muted); margin-top: 10px; }
+
+        .page { display: none; }
+        .page.active { display: block; }
         
-        /* Alarm Button */
-        #alarm-activator { background: var(--danger); color: white; padding: 10px; border-radius: 0 0 12px 12px; font-size: 10px; text-align: center; cursor: pointer; font-weight: bold; }
+        #status-indicator { font-size: 10px; text-align: center; color: var(--muted); padding-bottom: 5px; }
     </style>
 </head>
 <body>
 
-<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto" loop></audio>
+<audio id="alarmSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
+<div id="alarm-overlay">
+    <i class="fas fa-exclamation-triangle fa-4x" style="margin-bottom: 20px; color: white;"></i>
+    <h1 style="color: white; margin: 0;">GÖREV VAKTİ!</h1>
+    <p id="alarm-desc" style="font-size: 1.2rem; color: white; margin: 15px 0 30px; padding: 0 20px;"></p>
+    <button class="stop-btn" onclick="app.stopAlarm()">ALARM SUSTUR</button>
+</div>
 
 <header>
     <img src="görev.png" alt="Logo" class="main-logo" onerror="this.style.display='none'">
-    <div id="status-indicator" style="font-size:10px; color:var(--muted);">Bağlantı Bekleniyor...</div>
+    <div id="status-indicator">Veritabanı kontrol ediliyor...</div>
 </header>
-<div id="alarm-activator" onclick="app.unlockAudio()">🔔 ALARMLARI ETKİNLEŞTİRMEK İÇİN TIKLAYIN</div>
+<div id="alarm-activator" onclick="app.unlockAudio()"><i class="fas fa-bell"></i> SESLİ ALARMLARI AKTİFLEŞTİRMEK İÇİN DOKUNUN</div>
 
 <nav class="main-nav">
-    <button class="nav-btn active" onclick="app.showPage('dashboard')"><i class="fas fa-home"></i> Panel</button>
-    <button class="nav-btn" onclick="app.showPage('tasks')"><i class="fas fa-tasks"></i> Görevler</button>
-    <button class="nav-btn" onclick="app.showPage('management')"><i class="fas fa-cog"></i> Yönetim</button>
+    <button class="nav-btn active" onclick="app.showPage('dashboard')"><i class="fas fa-chart-pie"></i> Panel</button>
+    <button class="nav-btn" onclick="app.showPage('tasks')"><i class="fas fa-list-check"></i> Görevler</button>
+    <button class="nav-btn" onclick="app.showPage('management')"><i class="fas fa-user-gear"></i> Yönetim</button>
 </nav>
 
 <div class="container">
+    
     <div id="page-dashboard" class="page active">
         <div class="stats-grid">
             <div class="stat-card"><p>Bugün</p><h2 id="s_today">0</h2></div>
-            <div class="stat-card"><p>Haftalık</p><h2 id="s_week">0</h2></div>
-            <div class="stat-card"><p>Aylık</p><h2 id="s_month">0</h2></div>
-            <div class="stat-card"><p>Biten</p><h2 id="s_archive">0</h2></div>
+            <div class="stat-card"><p>Bu Hafta</p><h2 id="s_week">0</h2></div>
+            <div class="stat-card"><p>Bu Ay</p><h2 id="s_month">0</h2></div>
+            <div class="stat-card"><p>Arşiv</p><h2 id="s_archive">0</h2></div>
         </div>
         <div class="glass-card">
-            <h3><i class="fas fa-chart-pie"></i> Personel İş Yükü</h3>
-            <div id="personStats" style="font-size: 14px;">Veri bekleniyor...</div>
+            <h3><i class="fas fa-users"></i> Personel Yük Dağılımı</h3>
+            <div id="personStats" style="font-size: 14px; color: var(--muted);">Veri yükleniyor...</div>
         </div>
     </div>
 
     <div id="page-tasks" class="page">
         <div class="glass-card">
-            <h3><i class="fas fa-plus"></i> Hızlı Görev Ekle</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+            <h3><i class="fas fa-plus"></i> Görev Atama</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
                 <select id="selCat"></select>
                 <select id="selPerson"></select>
-                <select id="selPrio"><option value="Normal">Normal</option><option value="Acil">Acil</option></select>
-                <input type="text" id="jobDesc" placeholder="İş tanımı...">
+                <select id="selPrio"><option>Normal</option><option>Acil</option></select>
                 <input type="datetime-local" id="jobEnd">
-                <button onclick="app.addTask()" style="background:var(--success)">Kaydet ve Bildir</button>
+                <input type="text" id="jobDesc" placeholder="Görev detayı..." style="grid-column: span 1;">
+                <button onclick="app.addTask()" style="background:var(--primary)">Kaydet ve Bildir</button>
             </div>
         </div>
+        
         <div style="margin-bottom: 15px; display: flex; gap: 8px;">
-            <button onclick="app.setFilter('all')" class="nav-btn active filter-b">Tümü</button>
-            <button onclick="app.setFilter('archive')" class="nav-btn filter-b">Arşiv</button>
+            <button onclick="app.setFilter('active')" id="btn-active" class="nav-btn active" style="background: #1e293b; border: 1px solid var(--primary);">Aktif İşler</button>
+            <button onclick="app.setFilter('archive')" id="btn-archive" class="nav-btn" style="background: #1e293b; border: 1px solid var(--muted);">Arşiv</button>
         </div>
         <div id="taskList"></div>
     </div>
 
     <div id="page-management" class="page">
-        <div class="glass-card">
-            <h3><i class="fas fa-folder-plus"></i> Kategori Ekle</h3>
-            <div style="display:flex; gap:8px;"><input type="text" id="newCat"><button onclick="app.addCat()" style="width:60px">Ekle</button></div>
-            <ul id="catAdminList" style="list-style:none; padding:0; margin-top:15px;"></ul>
-        </div>
-        <div class="glass-card">
-            <h3><i class="fas fa-user-plus"></i> Personel Ekle</h3>
-            <input type="text" id="newName" placeholder="Ad Soyad" style="margin-bottom:8px">
-            <input type="tel" id="newPhone" placeholder="905XXXXXXXXX" style="margin-bottom:10px">
-            <button onclick="app.addPerson()" style="background:var(--primary)">Kaydet</button>
-            <ul id="personAdminList" style="list-style:none; padding:0; margin-top:15px;"></ul>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+            <div class="glass-card">
+                <h3><i class="fas fa-tags"></i> Kategori Yönetimi</h3>
+                <div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="newCat"><button onclick="app.addCat()" style="width:50px">+</button></div>
+                <ul id="catAdminList" style="list-style:none; padding:0;"></ul>
+            </div>
+            <div class="glass-card">
+                <h3><i class="fas fa-users-cog"></i> Personel Yönetimi</h3>
+                <input type="text" id="newName" placeholder="Ad Soyad" style="margin-bottom:5px">
+                <input type="tel" id="newPhone" placeholder="905XXXXXXXXX" style="margin-bottom:10px">
+                <button onclick="app.addPerson()" style="background:var(--success)">Yeni Personel Kaydet</button>
+                <ul id="personAdminList" style="list-style:none; padding:10px 0;"></ul>
+            </div>
         </div>
     </div>
+
 </div>
 
 <script>
@@ -127,34 +152,29 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const app = {
-    tasks: {}, filter: 'all', audioUnlocked: false, notifiedTasks: new Set(),
+    tasks: {}, filter: 'active', audioUnlocked: false, notified: new Set(), currentTaskId: null,
 
     init() {
         db.ref(".info/connected").on("value", s => {
             const el = document.getElementById('status-indicator');
-            el.innerText = s.val() ? "● SİSTEM ÇEVRİMİÇİ" : "○ BAĞLANTI KESİLDİ";
+            el.innerText = s.val() ? "● SİSTEM BAĞLI" : "○ BAĞLANTI YOK";
             el.style.color = s.val() ? "#25d366" : "#ef4444";
         });
-
         db.ref('categories').on('value', s => this.upCat(s.val() || {}));
         db.ref('people').on('value', s => this.upPers(s.val() || {}));
-        db.ref('tasks').on('value', s => { 
-            this.tasks = s.val() || {}; 
-            this.render(); 
-            this.runStats(); 
-        });
-
-        // Alarm Döngüsü (30 saniyede bir)
-        setInterval(() => this.checkAlarms(), 30000);
+        db.ref('tasks').on('value', s => { this.tasks = s.val() || {}; this.render(); this.runStats(); });
+        
+        setInterval(() => this.checkAlarms(), 20000);
     },
 
     unlockAudio() {
-        const audio = document.getElementById('alarmSound');
-        audio.play().then(() => {
-            audio.pause();
+        document.getElementById('alarmSound').play().then(() => {
+            document.getElementById('alarmSound').pause();
             this.audioUnlocked = true;
-            document.getElementById('alarm-activator').innerText = "✅ ALARMLAR AKTİF";
-            document.getElementById('alarm-activator').style.background = "#10b981";
+            const btn = document.getElementById('alarm-activator');
+            btn.innerText = "✅ ALARMLAR AKTİF";
+            btn.style.background = "#10b981";
+            if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(()=>{});
         });
     },
 
@@ -164,67 +184,65 @@ const app = {
         Object.keys(this.tasks).forEach(k => {
             const t = this.tasks[k];
             if (t.status === 'active') {
-                const taskTime = new Date(t.end);
-                // Vakti gelmiş ve son 5 dakika içinde olan, henüz uyarılmamış görevler
-                if (taskTime <= now && (now - taskTime) < 300000 && !this.notifiedTasks.has(k)) {
-                    this.triggerAlarm(t.desc);
-                    this.notifiedTasks.add(k);
+                const tDate = new Date(t.end);
+                if (tDate <= now && (now - tDate) < 600000 && !this.notified.has(k)) {
+                    this.triggerAlarm(t.desc, k);
                 }
             }
         });
     },
 
-    triggerAlarm(title) {
-        const audio = document.getElementById('alarmSound');
-        audio.play();
-        if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
-        
-        setTimeout(() => {
-            if(confirm("⏰ GÖREV VAKTİ: " + title + "\n\nSesi susturmak ister misiniz?")) {
-                audio.pause();
-                audio.currentTime = 0;
-            }
-        }, 500);
+    triggerAlarm(desc, id) {
+        this.currentTaskId = id;
+        document.getElementById('alarm-desc').innerText = desc;
+        document.getElementById('alarm-overlay').style.display = 'flex';
+        document.getElementById('alarmSound').play();
+        if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]);
+    },
+
+    stopAlarm() {
+        document.getElementById('alarmSound').pause();
+        document.getElementById('alarmSound').currentTime = 0;
+        document.getElementById('alarm-overlay').style.display = 'none';
+        if (this.currentTaskId) this.notified.add(this.currentTaskId);
     },
 
     showPage(p) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         document.getElementById('page-' + p).classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.main-nav .nav-btn').forEach(b => b.classList.remove('active'));
         event.currentTarget.classList.add('active');
     },
 
+    setFilter(f) {
+        this.filter = f;
+        document.getElementById('btn-active').classList.toggle('active', f === 'active');
+        document.getElementById('btn-archive').classList.toggle('active', f === 'archive');
+        this.render();
+    },
+
     upCat(data) {
-        const el = document.getElementById('catAdminList');
-        const sel = document.getElementById('selCat');
+        const el = document.getElementById('catAdminList'); const sel = document.getElementById('selCat');
         el.innerHTML = ''; sel.innerHTML = '';
         Object.keys(data).forEach(k => {
-            el.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #334155;">${data[k]} <span onclick="app.del('categories/${k}')" style="color:var(--danger); cursor:pointer"><i class="fas fa-trash"></i></span></li>`;
-            sel.innerHTML += `<option value="${data[k]}">${data[k]}</option>`;
+            el.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #334155;">${data[k]} <i class="fas fa-trash" onclick="app.del('categories/${k}')" style="color:var(--danger); cursor:pointer"></i></li>`;
+            sel.innerHTML += `<option>${data[k]}</option>`;
         });
     },
 
     upPers(data) {
-        const el = document.getElementById('personAdminList');
-        const sel = document.getElementById('selPerson');
+        const el = document.getElementById('personAdminList'); const sel = document.getElementById('selPerson');
         el.innerHTML = ''; sel.innerHTML = '';
         Object.keys(data).forEach(k => {
-            el.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #334155;">${data[k].name} <span onclick="app.del('people/${k}')" style="color:var(--danger); cursor:pointer"><i class="fas fa-user-minus"></i></span></li>`;
+            el.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #334155;">${data[k].name} <i class="fas fa-user-minus" onclick="app.del('people/${k}')" style="color:var(--danger); cursor:pointer"></i></li>`;
             sel.innerHTML += `<option value="${k}">${data[k].name}</option>`;
         });
     },
 
-    addCat() { 
-        const v = document.getElementById('newCat').value.trim(); 
-        if(v) db.ref('categories').push(v).then(() => document.getElementById('newCat').value=''); 
-    },
-
+    addCat() { const v = document.getElementById('newCat').value.trim(); if(v) db.ref('categories').push(v).then(()=>document.getElementById('newCat').value=''); },
     addPerson() {
-        const n = document.getElementById('newName').value.trim(); 
-        const p = document.getElementById('newPhone').value.trim();
-        if(n && p) db.ref('people').push({name:n, phone:p}).then(() => {
-            document.getElementById('newName').value=''; document.getElementById('newPhone').value='';
-        });
+        const n = document.getElementById('newName').value.trim(); const p = document.getElementById('newPhone').value.trim();
+        if(n && p) db.ref('people').push({name:n, phone:p}).then(()=>{ document.getElementById('newName').value=''; document.getElementById('newPhone').value=''; });
     },
 
     addTask() {
@@ -232,71 +250,60 @@ const app = {
         if(!pk) return alert("Personel seçin!");
         db.ref('people/'+pk).once('value', s => {
             const task = {
-                desc: document.getElementById('jobDesc').value,
-                cat: document.getElementById('selCat').value,
-                prio: document.getElementById('selPrio').value,
-                end: document.getElementById('jobEnd').value,
-                uName: s.val().name, uPhone: s.val().phone,
-                status: 'active', doneAt: ''
+                desc: document.getElementById('jobDesc').value, cat: document.getElementById('selCat').value,
+                prio: document.getElementById('selPrio').value, end: document.getElementById('jobEnd').value,
+                uName: s.val().name, uPhone: s.val().phone, status: 'active', doneAt: ''
             };
+            if(!task.desc || !task.end) return alert("Eksik alan!");
             db.ref('tasks').push(task).then(() => {
-                const msg = `🚀 *GÖREV:* ${task.desc}%0A⏰ *BİTİŞ:* ${task.end.replace('T',' ')}`;
-                window.open(`https://wa.me/${task.uPhone}?text=${msg}`, '_blank');
+                window.open(`https://wa.me/${task.uPhone}?text=🚀 *YENİ GÖREV ATAMASI*%0A%0A*İş:* ${task.desc}%0A*Bitiş:* ${task.end.replace('T',' ')}`, '_blank');
                 document.getElementById('jobDesc').value = '';
             });
         });
     },
 
-    setFilter(f) { this.filter = f; document.querySelectorAll('.filter-b').forEach(b => b.classList.remove('active')); event.currentTarget.classList.add('active'); this.render(); },
     complete(id) { db.ref('tasks/'+id).update({status:'archive', doneAt: new Date().toLocaleString('tr-TR')}); },
-    del(p) { if(confirm("Silinsin mi?")) db.ref(p).remove(); },
+    del(p) { if(confirm("Emin misiniz?")) db.ref(p).remove(); },
 
     runStats() {
-        const now = new Date();
-        let s = { today:0, week:0, month:0, archive:0, users:{} };
+        const now = new Date(); let s = { today:0, week:0, month:0, archive:0, users:{} };
         Object.values(this.tasks).forEach(t => {
             if(t.status === 'archive') s.archive++;
             else {
                 const d = new Date(t.end);
                 if(d.toDateString() === now.toDateString()) s.today++;
-                if((d - now) < 604800000) s.week++;
-                if((d - now) < 2592000000) s.month++;
+                if((d-now) < 604800000) s.week++;
+                if((d-now) < 2592000000) s.month++;
                 s.users[t.uName] = (s.users[t.uName] || 0) + 1;
             }
         });
-        document.getElementById('s_today').innerText = s.today;
-        document.getElementById('s_week').innerText = s.week;
-        document.getElementById('s_month').innerText = s.month;
-        document.getElementById('s_archive').innerText = s.archive;
-        let uHtml = '';
-        for(let u in s.users) uHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px;"><span>${u}</span><b>${s.users[u]} İş</b></div>`;
-        document.getElementById('personStats').innerHTML = uHtml || "Aktif iş yok.";
+        document.getElementById('s_today').innerText = s.today; document.getElementById('s_week').innerText = s.week;
+        document.getElementById('s_month').innerText = s.month; document.getElementById('s_archive').innerText = s.archive;
+        let uHtml = ''; for(let u in s.users) uHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; background:rgba(255,255,255,0.03); padding:8px; border-radius:8px;"><span>${u}</span><b style="color:var(--primary)">${s.users[u]} Aktif İş</b></div>`;
+        document.getElementById('personStats').innerHTML = uHtml || "Aktif iş bulunmuyor.";
     },
 
     render() {
-        const container = document.getElementById('taskList');
-        container.innerHTML = '';
+        const container = document.getElementById('taskList'); container.innerHTML = '';
         Object.keys(this.tasks).reverse().forEach(k => {
             const t = this.tasks[k];
-            if(this.filter === 'archive' && t.status !== 'archive') return;
-            if(this.filter !== 'archive' && t.status === 'archive') return;
+            if(t.status !== this.filter) return;
             container.innerHTML += `
-                <div class="task-card prio-${t.prio} ${t.status === 'archive' ? 'completed' : ''}">
+                <div class="task-card prio-${t.prio} ${t.status === 'archive' ? 'completed-card' : ''}">
                     <div style="display:flex; justify-content:space-between">
                         <b>${t.desc}</b>
-                        <span onclick="app.del('tasks/${k}')" style="color:var(--danger); cursor:pointer"><i class="fas fa-times"></i></span>
+                        <i class="fas fa-trash" onclick="app.del('tasks/${k}')" style="color:var(--danger); cursor:pointer"></i>
                     </div>
                     <div class="meta">
                         <span><i class="fas fa-folder"></i> ${t.cat}</span>
                         <span><i class="fas fa-user"></i> ${t.uName}</span>
                         <span><i class="fas fa-calendar"></i> ${t.status==='active' ? t.end.replace('T',' ') : 'Bitti: '+t.doneAt}</span>
                     </div>
-                    ${t.status === 'active' ? `<button onclick="app.complete('${k}')" style="margin-top:10px; background:var(--success); font-size:11px; padding:6px;">Tamamla</button>` : ''}
+                    ${t.status === 'active' ? `<button onclick="app.complete('${k}')" style="margin-top:12px; background:var(--success); border:none; padding:8px; font-weight:bold;">TAMAMLA</button>` : ''}
                 </div>`;
         });
     }
 };
-
 app.init();
 </script>
 </body>
