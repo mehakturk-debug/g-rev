@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TaskFlow Pro v4 - Enterprise</title>
+    <title>TaskFlow Pro v12 - Alarm Master</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -12,90 +12,107 @@
     <style>
         :root {
             --primary: #6366f1; --bg: #0f172a; --card: #1e293b;
-            --text: #f8fafc; --muted: #94a3b8; --danger: #ef4444; --wa: #25d366;
+            --text: #f8fafc; --muted: #94a3b8; --danger: #ef4444; --wa: #25d366; --success: #10b981;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 15px; }
         
-        /* Modern Glass UI */
-        .glass-card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        h3 { margin: 0 0 15px 0; font-size: 1rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        header { text-align: center; padding: 15px 0; background: rgba(30, 41, 59, 0.5); }
+        .main-logo { max-width: 100px; height: auto; margin-bottom: 5px; }
         
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
-        .full-width { grid-column: 1 / -1; }
+        .main-nav { display: flex; justify-content: center; gap: 5px; background: var(--card); padding: 8px; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #334155; }
+        .nav-btn { padding: 10px 15px; border-radius: 8px; border: none; background: transparent; color: var(--muted); cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.3s; }
+        .nav-btn.active { background: var(--primary); color: white; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .stat-card h2 { margin: 5px 0 0; font-size: 1.8rem; color: var(--primary); }
+        .stat-card p { margin: 0; color: var(--muted); font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+
+        .glass-card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        h3 { margin: 0 0 15px 0; font-size: 0.9rem; color: var(--primary); display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        input, select, button { width: 100%; padding: 12px; background: #334155; border: 1px solid #475569; color: white; border-radius: 10px; font-size: 14px; outline: none; box-sizing: border-box; }
+        button { background: var(--primary); cursor: pointer; border: none; font-weight: bold; }
         
-        label { display: block; font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-weight: 700; }
-        input, select, button { 
-            width: 100%; padding: 12px; background: #334155; border: 1px solid #475569; 
-            color: white; border-radius: 10px; font-size: 15px; outline: none; box-sizing: border-box;
-        }
-        input:focus { border-color: var(--primary); }
-        
-        button { background: var(--primary); cursor: pointer; border: none; font-weight: 700; transition: 0.2s; }
-        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        
-        /* Task Display */
         .task-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 5px solid var(--primary); }
         .prio-Acil { border-left-color: var(--danger); }
-        .task-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 10px; }
-        .wa-btn { background: var(--wa); color: white; margin-top: 10px; padding: 10px; font-size: 14px; }
+        .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--muted); margin-top: 10px; }
         
-        .management-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        @media (max-width: 650px) { .management-grid { grid-template-columns: 1fr; } }
+        /* Alarm Button */
+        #alarm-activator { background: var(--danger); color: white; padding: 10px; border-radius: 0 0 12px 12px; font-size: 10px; text-align: center; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
+<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto" loop></audio>
+
+<header>
+    <img src="görev.png" alt="Logo" class="main-logo" onerror="this.style.display='none'">
+    <div id="status-indicator" style="font-size:10px; color:var(--muted);">Bağlantı Bekleniyor...</div>
+</header>
+<div id="alarm-activator" onclick="app.unlockAudio()">🔔 ALARMLARI ETKİNLEŞTİRMEK İÇİN TIKLAYIN</div>
+
+<nav class="main-nav">
+    <button class="nav-btn active" onclick="app.showPage('dashboard')"><i class="fas fa-home"></i> Panel</button>
+    <button class="nav-btn" onclick="app.showPage('tasks')"><i class="fas fa-tasks"></i> Görevler</button>
+    <button class="nav-btn" onclick="app.showPage('management')"><i class="fas fa-cog"></i> Yönetim</button>
+</nav>
+
 <div class="container">
-    <header style="text-align:center; padding: 20px 0;">
-        <h1 style="margin:0; letter-spacing: -1px;">TaskFlow <span style="color:var(--primary)">Pro</span></h1>
-        <small id="sync" style="color:var(--wa)">● BULUT SENKRONİZASYONU AKTİF</small>
-    </header>
-
-    <div class="management-grid">
-        <div class="glass-card">
-            <h3><i class="fas fa-folder-plus"></i> Kategori Yönetimi</h3>
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="newCat" placeholder="Örn: Yazılım">
-                <button onclick="app.addCat()" style="width: 60px;">+</button>
-            </div>
+    <div id="page-dashboard" class="page active">
+        <div class="stats-grid">
+            <div class="stat-card"><p>Bugün</p><h2 id="s_today">0</h2></div>
+            <div class="stat-card"><p>Haftalık</p><h2 id="s_week">0</h2></div>
+            <div class="stat-card"><p>Aylık</p><h2 id="s_month">0</h2></div>
+            <div class="stat-card"><p>Biten</p><h2 id="s_archive">0</h2></div>
         </div>
         <div class="glass-card">
-            <h3><i class="fas fa-user-plus"></i> Personel Kaydı</h3>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <input type="text" id="newName" placeholder="Ad Soyad">
-                <input type="tel" id="newPhone" placeholder="905xxxxxxxxx">
-                <button onclick="app.addPerson()">Kaydet</button>
-            </div>
+            <h3><i class="fas fa-chart-pie"></i> Personel İş Yükü</h3>
+            <div id="personStats" style="font-size: 14px;">Veri bekleniyor...</div>
         </div>
     </div>
 
-    <div class="glass-card">
-        <h3><i class="fas fa-rocket"></i> Görev Dağıtım Paneli</h3>
-        <div class="form-grid">
-            <div><label>Kategori</label><select id="selCat"></select></div>
-            <div><label>Sorumlu Personel</label><select id="selPerson"></select></div>
-            <div><label>Aciliyet</label>
-                <select id="selPrio">
-                    <option value="Normal">Normal</option>
-                    <option value="Acil">Acil (Yüksek)</option>
-                </select>
-            </div>
-            <div class="full-width"><label>İşin Detayı</label><input type="text" id="jobDesc" placeholder="Yapılacak işi buraya yazın..."></div>
-            <div><label>Başlangıç Tarihi</label><input type="datetime-local" id="jobStart"></div>
-            <div><label>Bitiş Tarihi</label><input type="datetime-local" id="jobEnd"></div>
-            <div style="display: flex; align-items: flex-end;">
-                <button onclick="app.addTask()" style="height: 45px;">Görevi Atla</button>
+    <div id="page-tasks" class="page">
+        <div class="glass-card">
+            <h3><i class="fas fa-plus"></i> Hızlı Görev Ekle</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                <select id="selCat"></select>
+                <select id="selPerson"></select>
+                <select id="selPrio"><option value="Normal">Normal</option><option value="Acil">Acil</option></select>
+                <input type="text" id="jobDesc" placeholder="İş tanımı...">
+                <input type="datetime-local" id="jobEnd">
+                <button onclick="app.addTask()" style="background:var(--success)">Kaydet ve Bildir</button>
             </div>
         </div>
+        <div style="margin-bottom: 15px; display: flex; gap: 8px;">
+            <button onclick="app.setFilter('all')" class="nav-btn active filter-b">Tümü</button>
+            <button onclick="app.setFilter('archive')" class="nav-btn filter-b">Arşiv</button>
+        </div>
+        <div id="taskList"></div>
     </div>
 
-    <div id="taskList"></div>
+    <div id="page-management" class="page">
+        <div class="glass-card">
+            <h3><i class="fas fa-folder-plus"></i> Kategori Ekle</h3>
+            <div style="display:flex; gap:8px;"><input type="text" id="newCat"><button onclick="app.addCat()" style="width:60px">Ekle</button></div>
+            <ul id="catAdminList" style="list-style:none; padding:0; margin-top:15px;"></ul>
+        </div>
+        <div class="glass-card">
+            <h3><i class="fas fa-user-plus"></i> Personel Ekle</h3>
+            <input type="text" id="newName" placeholder="Ad Soyad" style="margin-bottom:8px">
+            <input type="tel" id="newPhone" placeholder="905XXXXXXXXX" style="margin-bottom:10px">
+            <button onclick="app.addPerson()" style="background:var(--primary)">Kaydet</button>
+            <ul id="personAdminList" style="list-style:none; padding:0; margin-top:15px;"></ul>
+        </div>
+    </div>
 </div>
 
 <script>
-// --- KONFİGÜRASYON (SENİN BİLGİLERİN) ---
 const firebaseConfig = {
     apiKey: "AIzaSyBUF3LdVqpHkC5Ha2YReluEY5cbe9ScKhg",
     authDomain: "is-takip-sistemi-94c21.firebaseapp.com",
@@ -103,7 +120,6 @@ const firebaseConfig = {
     storageBucket: "is-takip-sistemi-94c21.firebasestorage.app",
     messagingSenderId: "113312619940",
     appId: "1:113312619940:web:59e4daaec3d9e8800a3531",
-    measurementId: "G-F0G7XM60S6",
     databaseURL: "https://is-takip-sistemi-94c21-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
@@ -111,105 +127,173 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const app = {
+    tasks: {}, filter: 'all', audioUnlocked: false, notifiedTasks: new Set(),
+
     init() {
-        // Kategorileri Dinle
-        db.ref('categories').on('value', snap => {
-            const data = snap.val();
-            const list = Array.isArray(data) ? data : (data ? Object.values(data) : ["Genel"]);
-            document.getElementById('selCat').innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join('');
+        db.ref(".info/connected").on("value", s => {
+            const el = document.getElementById('status-indicator');
+            el.innerText = s.val() ? "● SİSTEM ÇEVRİMİÇİ" : "○ BAĞLANTI KESİLDİ";
+            el.style.color = s.val() ? "#25d366" : "#ef4444";
         });
 
-        // Kişileri Dinle
-        db.ref('people').on('value', snap => {
-            const data = snap.val();
-            const el = document.getElementById('selPerson');
-            if(!data) { el.innerHTML = '<option value="">Önce Personel Ekleyin</option>'; return; }
-            el.innerHTML = Object.keys(data).map(k => `<option value="${k}">${data[k].name}</option>`).join('');
+        db.ref('categories').on('value', s => this.upCat(s.val() || {}));
+        db.ref('people').on('value', s => this.upPers(s.val() || {}));
+        db.ref('tasks').on('value', s => { 
+            this.tasks = s.val() || {}; 
+            this.render(); 
+            this.runStats(); 
         });
 
-        // Görevleri Dinle
-        db.ref('tasks').on('value', snap => this.render(snap.val()));
+        // Alarm Döngüsü (30 saniyede bir)
+        setInterval(() => this.checkAlarms(), 30000);
     },
 
-    addCat() {
-        const val = document.getElementById('newCat').value.trim();
-        if(!val) return;
-        db.ref('categories').once('value', snap => {
-            let cats = snap.val();
-            if(!Array.isArray(cats)) cats = cats ? Object.values(cats) : [];
-            if(!cats.includes(val)) {
-                cats.push(val);
-                db.ref('categories').set(cats);
+    unlockAudio() {
+        const audio = document.getElementById('alarmSound');
+        audio.play().then(() => {
+            audio.pause();
+            this.audioUnlocked = true;
+            document.getElementById('alarm-activator').innerText = "✅ ALARMLAR AKTİF";
+            document.getElementById('alarm-activator').style.background = "#10b981";
+        });
+    },
+
+    checkAlarms() {
+        if (!this.audioUnlocked) return;
+        const now = new Date();
+        Object.keys(this.tasks).forEach(k => {
+            const t = this.tasks[k];
+            if (t.status === 'active') {
+                const taskTime = new Date(t.end);
+                // Vakti gelmiş ve son 5 dakika içinde olan, henüz uyarılmamış görevler
+                if (taskTime <= now && (now - taskTime) < 300000 && !this.notifiedTasks.has(k)) {
+                    this.triggerAlarm(t.desc);
+                    this.notifiedTasks.add(k);
+                }
             }
         });
-        document.getElementById('newCat').value = '';
+    },
+
+    triggerAlarm(title) {
+        const audio = document.getElementById('alarmSound');
+        audio.play();
+        if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+        
+        setTimeout(() => {
+            if(confirm("⏰ GÖREV VAKTİ: " + title + "\n\nSesi susturmak ister misiniz?")) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+        }, 500);
+    },
+
+    showPage(p) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.getElementById('page-' + p).classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    },
+
+    upCat(data) {
+        const el = document.getElementById('catAdminList');
+        const sel = document.getElementById('selCat');
+        el.innerHTML = ''; sel.innerHTML = '';
+        Object.keys(data).forEach(k => {
+            el.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #334155;">${data[k]} <span onclick="app.del('categories/${k}')" style="color:var(--danger); cursor:pointer"><i class="fas fa-trash"></i></span></li>`;
+            sel.innerHTML += `<option value="${data[k]}">${data[k]}</option>`;
+        });
+    },
+
+    upPers(data) {
+        const el = document.getElementById('personAdminList');
+        const sel = document.getElementById('selPerson');
+        el.innerHTML = ''; sel.innerHTML = '';
+        Object.keys(data).forEach(k => {
+            el.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #334155;">${data[k].name} <span onclick="app.del('people/${k}')" style="color:var(--danger); cursor:pointer"><i class="fas fa-user-minus"></i></span></li>`;
+            sel.innerHTML += `<option value="${k}">${data[k].name}</option>`;
+        });
+    },
+
+    addCat() { 
+        const v = document.getElementById('newCat').value.trim(); 
+        if(v) db.ref('categories').push(v).then(() => document.getElementById('newCat').value=''); 
     },
 
     addPerson() {
-        const name = document.getElementById('newName').value.trim();
-        const phone = document.getElementById('newPhone').value.trim();
-        if(!name || !phone) return alert("İsim ve telefon boş bırakılamaz!");
-        db.ref('people').push({ name, phone });
-        document.getElementById('newName').value = '';
-        document.getElementById('newPhone').value = '';
+        const n = document.getElementById('newName').value.trim(); 
+        const p = document.getElementById('newPhone').value.trim();
+        if(n && p) db.ref('people').push({name:n, phone:p}).then(() => {
+            document.getElementById('newName').value=''; document.getElementById('newPhone').value='';
+        });
     },
 
     addTask() {
-        const pKey = document.getElementById('selPerson').value;
-        if(!pKey) return alert("Lütfen önce bir personel seçin!");
-
-        db.ref('people/' + pKey).once('value', snap => {
-            const p = snap.val();
+        const pk = document.getElementById('selPerson').value;
+        if(!pk) return alert("Personel seçin!");
+        db.ref('people/'+pk).once('value', s => {
             const task = {
                 desc: document.getElementById('jobDesc').value,
                 cat: document.getElementById('selCat').value,
                 prio: document.getElementById('selPrio').value,
-                start: document.getElementById('jobStart').value,
                 end: document.getElementById('jobEnd').value,
-                uName: p.name,
-                uPhone: p.phone,
-                at: Date.now()
+                uName: s.val().name, uPhone: s.val().phone,
+                status: 'active', doneAt: ''
             };
-            if(!task.desc || !task.end) return alert("İş detayı ve bitiş tarihi zorunludur!");
-            
             db.ref('tasks').push(task).then(() => {
-                this.sendWA(task);
+                const msg = `🚀 *GÖREV:* ${task.desc}%0A⏰ *BİTİŞ:* ${task.end.replace('T',' ')}`;
+                window.open(`https://wa.me/${task.uPhone}?text=${msg}`, '_blank');
                 document.getElementById('jobDesc').value = '';
             });
         });
     },
 
-    sendWA(t) {
-        const msg = `🚀 *YENİ GÖREV ATAMASI*%0A%0A*İş:* ${t.desc}%0A*Kategori:* ${t.cat}%0A*Bitiş:* ${t.end.replace('T',' ')}%0A*Önem:* ${t.prio}`;
-        window.open(`https://wa.me/${t.uPhone}?text=${msg}`, '_blank');
+    setFilter(f) { this.filter = f; document.querySelectorAll('.filter-b').forEach(b => b.classList.remove('active')); event.currentTarget.classList.add('active'); this.render(); },
+    complete(id) { db.ref('tasks/'+id).update({status:'archive', doneAt: new Date().toLocaleString('tr-TR')}); },
+    del(p) { if(confirm("Silinsin mi?")) db.ref(p).remove(); },
+
+    runStats() {
+        const now = new Date();
+        let s = { today:0, week:0, month:0, archive:0, users:{} };
+        Object.values(this.tasks).forEach(t => {
+            if(t.status === 'archive') s.archive++;
+            else {
+                const d = new Date(t.end);
+                if(d.toDateString() === now.toDateString()) s.today++;
+                if((d - now) < 604800000) s.week++;
+                if((d - now) < 2592000000) s.month++;
+                s.users[t.uName] = (s.users[t.uName] || 0) + 1;
+            }
+        });
+        document.getElementById('s_today').innerText = s.today;
+        document.getElementById('s_week').innerText = s.week;
+        document.getElementById('s_month').innerText = s.month;
+        document.getElementById('s_archive').innerText = s.archive;
+        let uHtml = '';
+        for(let u in s.users) uHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px;"><span>${u}</span><b>${s.users[u]} İş</b></div>`;
+        document.getElementById('personStats').innerHTML = uHtml || "Aktif iş yok.";
     },
 
-    render(data) {
+    render() {
         const container = document.getElementById('taskList');
-        if(!data) { container.innerHTML = '<p style="text-align:center; color:gray;">Henüz görev atanmamış.</p>'; return; }
-        
-        container.innerHTML = Object.keys(data).reverse().map(k => {
-            const t = data[k];
-            return `
-                <div class="task-card prio-${t.prio}">
-                    <div class="task-header">
-                        <div>
-                            <span style="font-size:10px; background:#334155; padding:2px 6px; border-radius:4px;">${t.cat}</span>
-                            <h4 style="margin:8px 0;">${t.desc}</h4>
-                        </div>
-                        <button onclick="db.ref('tasks/${k}').remove()" style="width:auto; background:none; color:var(--danger); font-size:18px;"><i class="fas fa-times-circle"></i></button>
+        container.innerHTML = '';
+        Object.keys(this.tasks).reverse().forEach(k => {
+            const t = this.tasks[k];
+            if(this.filter === 'archive' && t.status !== 'archive') return;
+            if(this.filter !== 'archive' && t.status === 'archive') return;
+            container.innerHTML += `
+                <div class="task-card prio-${t.prio} ${t.status === 'archive' ? 'completed' : ''}">
+                    <div style="display:flex; justify-content:space-between">
+                        <b>${t.desc}</b>
+                        <span onclick="app.del('tasks/${k}')" style="color:var(--danger); cursor:pointer"><i class="fas fa-times"></i></span>
                     </div>
                     <div class="meta">
+                        <span><i class="fas fa-folder"></i> ${t.cat}</span>
                         <span><i class="fas fa-user"></i> ${t.uName}</span>
-                        <span><i class="fas fa-calendar-alt"></i> ${t.end.replace('T', ' ')}</span>
-                        <span style="color:${t.prio === 'Acil' ? 'var(--danger)' : 'var(--wa)'}">● ${t.prio}</span>
+                        <span><i class="fas fa-calendar"></i> ${t.status==='active' ? t.end.replace('T',' ') : 'Bitti: '+t.doneAt}</span>
                     </div>
-                    <button class="wa-btn" onclick="app.sendWA(${JSON.stringify(t).replace(/"/g, '&quot;')})">
-                        <i class="fab fa-whatsapp"></i> Hatırlatıcı Gönder
-                    </button>
-                </div>
-            `;
-        }).join('');
+                    ${t.status === 'active' ? `<button onclick="app.complete('${k}')" style="margin-top:10px; background:var(--success); font-size:11px; padding:6px;">Tamamla</button>` : ''}
+                </div>`;
+        });
     }
 };
 
