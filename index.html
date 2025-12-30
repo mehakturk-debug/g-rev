@@ -2,91 +2,98 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Profesyonel İş Takip</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Task Manager</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --danger: #ef4444; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        :root {
+            --primary: #6366f1; --primary-hover: #4f46e5;
+            --bg: #0f172a; --card-bg: #1e293b;
+            --text: #f8fafc; --text-muted: #94a3b8;
+            --danger: #ef4444; --success: #22c55e;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        .container { max-width: 1000px; margin: 0 auto; }
         
-        /* Kart Yapıları */
-        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        h2, h3 { margin-top: 0; color: var(--primary); font-size: 1.2rem; }
-
-        /* Form Elemanları */
-        .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        @media (min-width: 768px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+        /* Modern UI Components */
+        .glass-card { background: var(--card-bg); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
+        h3 { margin-top: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; color: var(--primary); }
         
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         input, select, button { 
-            width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; 
-            box-sizing: border-box; font-size: 16px; /* Mobilde zoom yapmaması için 16px */
+            background: #334155; border: 1px solid #475569; color: white; padding: 12px; border-radius: 10px; font-size: 14px; outline: none; transition: 0.3s;
         }
-        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.98); }
-        .btn-delete { background: var(--danger); padding: 8px; font-size: 12px; width: auto; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
+        button { background: var(--primary); cursor: pointer; border: none; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        button:hover { background: var(--primary-hover); }
+        button.wa { background: #25d366; color: white; }
 
-        /* Görev Listesi */
-        .task-list { margin-top: 20px; }
-        .task-item { 
-            background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;
-            border-left: 6px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        /* Task Item Style */
+        .task-card { 
+            background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 12px; 
+            border-left: 5px solid var(--primary); display: flex; flex-direction: column; gap: 10px;
+            transition: transform 0.2s;
         }
-        .prio-Yüksek { border-left-color: var(--danger); }
-        .prio-Orta { border-left-color: #f59e0b; }
-        .prio-Düşük { border-left-color: #10b981; }
-
-        .task-details b { display: block; font-size: 1.1rem; }
-        .task-details span { font-size: 0.85rem; color: #64748b; }
+        .task-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .task-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--text-muted); }
+        .prio-high { border-left-color: var(--danger); }
         
-        .badge { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
+        .management-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        @media (max-width: 600px) { .management-section { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="text-align:center; padding: 10px;">
-        <h1 style="margin:0; font-size: 1.5rem;">📅 Bulut İş Takip</h1>
-        <small id="syncStatus" style="color:green">● Senkronize Edildi</small>
+    <div style="text-align: center; padding: 20px;">
+        <h1 style="margin:0; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">TaskFlow Pro</h1>
+        <p style="color: var(--text-muted); font-size: 14px;">Merkezi İş Takip & Senkronizasyon</p>
     </div>
 
-    <div class="card">
-        <h3>📂 Kategori Yönetimi</h3>
-        <div style="display: flex; gap: 5px;">
-            <input type="text" id="catInput" placeholder="Yeni kategori...">
-            <button onclick="addCategory()" style="width: 80px;">+</button>
+    <div class="management-section">
+        <div class="glass-card">
+            <h3><i class="fas fa-tags"></i> Kategori Ekle</h3>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="catInput" placeholder="Kategori adı...">
+                <button onclick="manager.add('categories', 'catInput')">+</button>
+            </div>
+        </div>
+        <div class="glass-card">
+            <h3><i class="fas fa-users"></i> Kişi Ekle</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <input type="text" id="perName" placeholder="Ad Soyad">
+                <input type="tel" id="perPhone" placeholder="905xxxxxxxxx">
+                <button onclick="manager.addPerson()">Kişi Ekle</button>
+            </div>
         </div>
     </div>
 
-    <div class="card">
-        <h3>📝 Yeni Görev</h3>
-        <div class="grid">
-            <select id="taskCategory"></select>
-            <input type="text" id="taskName" placeholder="İşin adı nedir?">
-            <select id="taskPriority">
-                <option>Düşük</option>
-                <option selected>Orta</option>
-                <option>Yüksek</option>
-            </select>
-            <input type="datetime-local" id="taskEnd">
-            <input type="text" id="taskAssignee" placeholder="Kime atandı?">
-            <button onclick="addTask()" style="grid-column: span 1;">Görevi Kaydet</button>
+    <div class="glass-card">
+        <h3><i class="fas fa-plus-circle"></i> Yeni Görev Atama</h3>
+        <div class="form-grid">
+            <div><label>Kategori</label><select id="taskCat"></select></div>
+            <div><label>Sorumlu Kişi</label><select id="taskPerson"></select></div>
+            <div><label>İş Tanımı</label><input type="text" id="taskName"></div>
+            <div><label>Aciliyet</label>
+                <select id="taskPrio">
+                    <option value="Normal">Normal</option>
+                    <option value="Acil">Yüksek (Acil)</option>
+                </select>
+            </div>
+            <div><label>Başlangıç</label><input type="datetime-local" id="taskStart"></div>
+            <div><label>Bitiş</label><input type="datetime-local" id="taskEnd"></div>
+            <div style="display: flex; align-items: flex-end;">
+                <button onclick="manager.addTask()" style="width: 100%;">Görevi Tanımla & Senkronize Et</button>
+            </div>
         </div>
     </div>
 
-    <div class="task-list" id="taskList">
-        <p style="text-align:center;">Yükleniyor...</p>
-    </div>
+    <div id="taskList"></div>
 </div>
 
-<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-
 <script>
-// --- SENİN FIREBASE BİLGİLERİN ---
 const firebaseConfig = {
   apiKey: "AIzaSyBUF3LdVqpHkC5Ha2YReluEY5cbe9ScKhg",
   authDomain: "is-takip-sistemi-94c21.firebaseapp.com",
@@ -94,114 +101,108 @@ const firebaseConfig = {
   storageBucket: "is-takip-sistemi-94c21.firebasestorage.app",
   messagingSenderId: "113312619940",
   appId: "1:113312619940:web:59e4daaec3d9e8800a3531",
-  measurementId: "G-F0G7XM60S6",
-  databaseURL: "https://is-takip-sistemi-94c21-default-rtdb.firebaseio.com" // Otomatik ekledim
+  databaseURL: "https://is-takip-sistemi-94c21-default-rtdb.firebaseio.com"
 };
 
-// Firebase Başlat
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// DOM Elemanları
-const taskListDiv = document.getElementById('taskList');
-const catSelect = document.getElementById('taskCategory');
+const manager = {
+    // Veritabanı Dinleyicileri
+    init() {
+        db.ref('categories').on('value', s => this.populateSelect('taskCat', s.val() || ["Genel"]));
+        db.ref('people').on('value', s => this.populatePeople(s.val()));
+        db.ref('tasks').on('value', s => this.renderTasks(s.val()));
+    },
 
-// 1. Kategorileri Dinle
-db.ref('categories').on('value', (snap) => {
-    const cats = snap.val() || ["Genel", "Acil", "Proje"];
-    catSelect.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
-});
+    add(path, inputId) {
+        const val = document.getElementById(inputId).value;
+        if(!val) return;
+        db.ref(path).once('value', s => {
+            const data = s.val() || [];
+            data.push(val);
+            db.ref(path).set(data);
+        });
+        document.getElementById(inputId).value = '';
+    },
 
-function addCategory() {
-    const val = document.getElementById('catInput').value;
-    if(!val) return;
-    db.ref('categories').once('value', snap => {
-        const current = snap.val() || ["Genel", "Acil", "Proje"];
-        if(!current.includes(val)) {
-            current.push(val);
-            db.ref('categories').set(current);
-        }
-    });
-    document.getElementById('catInput').value = '';
-}
+    addPerson() {
+        const name = document.getElementById('perName').value;
+        const phone = document.getElementById('perPhone').value;
+        if(!name || !phone) return alert("İsim ve Telefon şart!");
+        db.ref('people').push({ name, phone });
+        document.getElementById('perName').value = '';
+        document.getElementById('perPhone').value = '';
+    },
 
-// 2. Görevleri Dinle (Gerçek Zamanlı)
-db.ref('tasks').on('value', (snap) => {
-    const tasks = snap.val();
-    renderTasks(tasks);
-});
+    addTask() {
+        const personKey = document.getElementById('taskPerson').value;
+        db.ref('people/' + personKey).once('value', s => {
+            const person = s.val();
+            const task = {
+                name: document.getElementById('taskName').value,
+                cat: document.getElementById('taskCat').value,
+                prio: document.getElementById('taskPrio').value,
+                start: document.getElementById('taskStart').value,
+                end: document.getElementById('taskEnd').value,
+                who: person.name,
+                phone: person.phone,
+                ts: Date.now()
+            };
+            
+            db.ref('tasks').push(task).then(() => {
+                this.sendWhatsApp(task);
+                alert("Görev kaydedildi ve WhatsApp tetiklendi!");
+            });
+        });
+    },
 
-function addTask() {
-    const task = {
-        name: document.getElementById('taskName').value,
-        cat: catSelect.value,
-        prio: document.getElementById('taskPriority').value,
-        end: document.getElementById('taskEnd').value,
-        who: document.getElementById('taskAssignee').value || "Belirtilmedi",
-        created: Date.now()
-    };
+    sendWhatsApp(t) {
+        const msg = `🚀 *YENİ GÖREV ATANDI*%0A%0A*İş:* ${t.name}%0A*Kategori:* ${t.cat}%0A*Bitiş:* ${t.end.replace('T',' ')}%0A*Aciliyet:* ${t.prio}%0A%0AKolay gelsin!`;
+        window.open(`https://wa.me/${t.phone}?text=${msg}`, '_blank');
+    },
 
-    if(!task.name || !task.end) return alert("İş adı ve tarih zorunludur!");
+    populateSelect(id, data) {
+        const el = document.getElementById(id);
+        el.innerHTML = Object.values(data).map(v => `<option value="${v}">${v}</option>`).join('');
+    },
 
-    db.ref('tasks').push(task);
-    // Formu temizle
-    document.getElementById('taskName').value = '';
-}
+    populatePeople(data) {
+        const el = document.getElementById('taskPerson');
+        if(!data) return;
+        el.innerHTML = Object.keys(data).map(k => `<option value="${k}">${data[k].name}</option>`).join('');
+    },
 
-function deleteTask(id) {
-    if(confirm("Bu görevi silmek istediğine emin misin?")) {
-        db.ref('tasks/' + id).remove();
-    }
-}
-
-function renderTasks(data) {
-    if(!data) {
-        taskListDiv.innerHTML = '<p style="text-align:center;">Henüz görev yok.</p>';
-        return;
-    }
-    
-    let html = '';
-    const keys = Object.keys(data).reverse(); // Yeniler üstte
-    keys.forEach(key => {
-        const t = data[key];
-        html += `
-            <div class="task-item prio-${t.prio}">
-                <div class="task-details">
-                    <span class="badge">${t.cat}</span>
-                    <b>${t.name}</b>
-                    <span>📅 ${new Date(t.end).toLocaleString('tr-TR')}</span>
-                    <span>👤 ${t.who}</span>
+    renderTasks(data) {
+        const container = document.getElementById('taskList');
+        if(!data) { container.innerHTML = ""; return; }
+        
+        container.innerHTML = Object.keys(data).reverse().map(k => {
+            const t = data[k];
+            return `
+                <div class="task-card ${t.prio === 'Acil' ? 'prio-high' : ''}">
+                    <div class="task-header">
+                        <div>
+                            <span class="badge" style="background:var(--primary); padding:2px 8px; border-radius:5px; font-size:10px;">${t.cat}</span>
+                            <h4 style="margin:5px 0;">${t.name}</h4>
+                        </div>
+                        <button onclick="db.ref('tasks/${k}').remove()" class="btn-delete" style="background:transparent; color:var(--danger)"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="task-meta">
+                        <span><i class="far fa-clock"></i> ${t.start.replace('T',' ')} / ${t.end.replace('T',' ')}</span>
+                        <span><i class="far fa-user"></i> ${t.who}</span>
+                        <span style="color:${t.prio === 'Acil' ? 'var(--danger)' : 'var(--success)'}">● ${t.prio}</span>
+                    </div>
+                    <button class="wa" onclick="manager.sendWhatsApp(${JSON.stringify(t).replace(/"/g, '&quot;')})">
+                        <i class="fab fa-whatsapp"></i> Yeniden Hatırlat
+                    </button>
                 </div>
-                <button class="btn-delete" onclick="deleteTask('${key}')">Sil</button>
-            </div>
-        `;
-    });
-    taskListDiv.innerHTML = html;
-}
+            `;
+        }).join('');
+    }
+};
 
-// 3. Alarm Sistemi (30 saniyede bir kontrol)
-setInterval(() => {
-    const now = new Date().getTime();
-    db.ref('tasks').once('value', snap => {
-        const tasks = snap.val();
-        for(let id in tasks) {
-            const t = tasks[id];
-            const tEnd = new Date(t.end).getTime();
-            // Tam vaktinde mi? (1 dakikalık pencere)
-            if(Math.abs(now - tEnd) < 30000) {
-                document.getElementById('alarmSound').play();
-                if (Notification.permission === "granted") {
-                    new Notification("ZAMAN DOLDU!", { body: t.name });
-                }
-            }
-        }
-    });
-}, 30000);
-
-// Bildirim İzni
-if (Notification.permission !== "denied") {
-    Notification.requestPermission();
-}
+manager.init();
 </script>
 </body>
 </html>
