@@ -2,90 +2,91 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Task Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TaskFlow Pro v4 - Enterprise</title>
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
-            --primary: #6366f1; --primary-hover: #4f46e5;
-            --bg: #0f172a; --card-bg: #1e293b;
-            --text: #f8fafc; --text-muted: #94a3b8;
-            --danger: #ef4444; --success: #22c55e;
+            --primary: #6366f1; --bg: #0f172a; --card: #1e293b;
+            --text: #f8fafc; --muted: #94a3b8; --danger: #ef4444; --wa: #25d366;
         }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         .container { max-width: 1000px; margin: 0 auto; }
         
-        /* Modern UI Components */
-        .glass-card { background: var(--card-bg); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
-        h3 { margin-top: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; color: var(--primary); }
+        /* Modern Glass UI */
+        .glass-card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        h3 { margin: 0 0 15px 0; font-size: 1rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
         
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .full-width { grid-column: 1 / -1; }
+        
+        label { display: block; font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-weight: 700; }
         input, select, button { 
-            background: #334155; border: 1px solid #475569; color: white; padding: 12px; border-radius: 10px; font-size: 14px; outline: none; transition: 0.3s;
+            width: 100%; padding: 12px; background: #334155; border: 1px solid #475569; 
+            color: white; border-radius: 10px; font-size: 15px; outline: none; box-sizing: border-box;
         }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
-        button { background: var(--primary); cursor: pointer; border: none; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        button:hover { background: var(--primary-hover); }
-        button.wa { background: #25d366; color: white; }
-
-        /* Task Item Style */
-        .task-card { 
-            background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 12px; 
-            border-left: 5px solid var(--primary); display: flex; flex-direction: column; gap: 10px;
-            transition: transform 0.2s;
-        }
-        .task-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .task-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--text-muted); }
-        .prio-high { border-left-color: var(--danger); }
+        input:focus { border-color: var(--primary); }
         
-        .management-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        @media (max-width: 600px) { .management-section { grid-template-columns: 1fr; } }
+        button { background: var(--primary); cursor: pointer; border: none; font-weight: 700; transition: 0.2s; }
+        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        
+        /* Task Display */
+        .task-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border-left: 5px solid var(--primary); }
+        .prio-Acil { border-left-color: var(--danger); }
+        .task-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+        .wa-btn { background: var(--wa); color: white; margin-top: 10px; padding: 10px; font-size: 14px; }
+        
+        .management-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        @media (max-width: 650px) { .management-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="text-align: center; padding: 20px;">
-        <h1 style="margin:0; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">TaskFlow Pro</h1>
-        <p style="color: var(--text-muted); font-size: 14px;">Merkezi İş Takip & Senkronizasyon</p>
-    </div>
+    <header style="text-align:center; padding: 20px 0;">
+        <h1 style="margin:0; letter-spacing: -1px;">TaskFlow <span style="color:var(--primary)">Pro</span></h1>
+        <small id="sync" style="color:var(--wa)">● BULUT SENKRONİZASYONU AKTİF</small>
+    </header>
 
-    <div class="management-section">
+    <div class="management-grid">
         <div class="glass-card">
-            <h3><i class="fas fa-tags"></i> Kategori Ekle</h3>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="catInput" placeholder="Kategori adı...">
-                <button onclick="manager.add('categories', 'catInput')">+</button>
+            <h3><i class="fas fa-folder-plus"></i> Kategori Yönetimi</h3>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="newCat" placeholder="Örn: Yazılım">
+                <button onclick="app.addCat()" style="width: 60px;">+</button>
             </div>
         </div>
         <div class="glass-card">
-            <h3><i class="fas fa-users"></i> Kişi Ekle</h3>
+            <h3><i class="fas fa-user-plus"></i> Personel Kaydı</h3>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <input type="text" id="perName" placeholder="Ad Soyad">
-                <input type="tel" id="perPhone" placeholder="905xxxxxxxxx">
-                <button onclick="manager.addPerson()">Kişi Ekle</button>
+                <input type="text" id="newName" placeholder="Ad Soyad">
+                <input type="tel" id="newPhone" placeholder="905xxxxxxxxx">
+                <button onclick="app.addPerson()">Kaydet</button>
             </div>
         </div>
     </div>
 
     <div class="glass-card">
-        <h3><i class="fas fa-plus-circle"></i> Yeni Görev Atama</h3>
+        <h3><i class="fas fa-rocket"></i> Görev Dağıtım Paneli</h3>
         <div class="form-grid">
-            <div><label>Kategori</label><select id="taskCat"></select></div>
-            <div><label>Sorumlu Kişi</label><select id="taskPerson"></select></div>
-            <div><label>İş Tanımı</label><input type="text" id="taskName"></div>
+            <div><label>Kategori</label><select id="selCat"></select></div>
+            <div><label>Sorumlu Personel</label><select id="selPerson"></select></div>
             <div><label>Aciliyet</label>
-                <select id="taskPrio">
+                <select id="selPrio">
                     <option value="Normal">Normal</option>
-                    <option value="Acil">Yüksek (Acil)</option>
+                    <option value="Acil">Acil (Yüksek)</option>
                 </select>
             </div>
-            <div><label>Başlangıç</label><input type="datetime-local" id="taskStart"></div>
-            <div><label>Bitiş</label><input type="datetime-local" id="taskEnd"></div>
+            <div class="full-width"><label>İşin Detayı</label><input type="text" id="jobDesc" placeholder="Yapılacak işi buraya yazın..."></div>
+            <div><label>Başlangıç Tarihi</label><input type="datetime-local" id="jobStart"></div>
+            <div><label>Bitiş Tarihi</label><input type="datetime-local" id="jobEnd"></div>
             <div style="display: flex; align-items: flex-end;">
-                <button onclick="manager.addTask()" style="width: 100%;">Görevi Tanımla & Senkronize Et</button>
+                <button onclick="app.addTask()" style="height: 45px;">Görevi Atla</button>
             </div>
         </div>
     </div>
@@ -94,107 +95,117 @@
 </div>
 
 <script>
+// --- KONFİGÜRASYON (SENİN BİLGİLERİN) ---
 const firebaseConfig = {
-  apiKey: "AIzaSyBUF3LdVqpHkC5Ha2YReluEY5cbe9ScKhg",
-  authDomain: "is-takip-sistemi-94c21.firebaseapp.com",
-  projectId: "is-takip-sistemi-94c21",
-  storageBucket: "is-takip-sistemi-94c21.firebasestorage.app",
-  messagingSenderId: "113312619940",
-  appId: "1:113312619940:web:59e4daaec3d9e8800a3531",
-  databaseURL: "https://is-takip-sistemi-94c21-default-rtdb.firebaseio.com"
+    apiKey: "AIzaSyBUF3LdVqpHkC5Ha2YReluEY5cbe9ScKhg",
+    authDomain: "is-takip-sistemi-94c21.firebaseapp.com",
+    projectId: "is-takip-sistemi-94c21",
+    storageBucket: "is-takip-sistemi-94c21.firebasestorage.app",
+    messagingSenderId: "113312619940",
+    appId: "1:113312619940:web:59e4daaec3d9e8800a3531",
+    measurementId: "G-F0G7XM60S6",
+    databaseURL: "https://is-takip-sistemi-94c21-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const manager = {
-    // Veritabanı Dinleyicileri
+const app = {
     init() {
-        db.ref('categories').on('value', s => this.populateSelect('taskCat', s.val() || ["Genel"]));
-        db.ref('people').on('value', s => this.populatePeople(s.val()));
-        db.ref('tasks').on('value', s => this.renderTasks(s.val()));
+        // Kategorileri Dinle
+        db.ref('categories').on('value', snap => {
+            const data = snap.val();
+            const list = Array.isArray(data) ? data : (data ? Object.values(data) : ["Genel"]);
+            document.getElementById('selCat').innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join('');
+        });
+
+        // Kişileri Dinle
+        db.ref('people').on('value', snap => {
+            const data = snap.val();
+            const el = document.getElementById('selPerson');
+            if(!data) { el.innerHTML = '<option value="">Önce Personel Ekleyin</option>'; return; }
+            el.innerHTML = Object.keys(data).map(k => `<option value="${k}">${data[k].name}</option>`).join('');
+        });
+
+        // Görevleri Dinle
+        db.ref('tasks').on('value', snap => this.render(snap.val()));
     },
 
-    add(path, inputId) {
-        const val = document.getElementById(inputId).value;
+    addCat() {
+        const val = document.getElementById('newCat').value.trim();
         if(!val) return;
-        db.ref(path).once('value', s => {
-            const data = s.val() || [];
-            data.push(val);
-            db.ref(path).set(data);
+        db.ref('categories').once('value', snap => {
+            let cats = snap.val();
+            if(!Array.isArray(cats)) cats = cats ? Object.values(cats) : [];
+            if(!cats.includes(val)) {
+                cats.push(val);
+                db.ref('categories').set(cats);
+            }
         });
-        document.getElementById(inputId).value = '';
+        document.getElementById('newCat').value = '';
     },
 
     addPerson() {
-        const name = document.getElementById('perName').value;
-        const phone = document.getElementById('perPhone').value;
-        if(!name || !phone) return alert("İsim ve Telefon şart!");
+        const name = document.getElementById('newName').value.trim();
+        const phone = document.getElementById('newPhone').value.trim();
+        if(!name || !phone) return alert("İsim ve telefon boş bırakılamaz!");
         db.ref('people').push({ name, phone });
-        document.getElementById('perName').value = '';
-        document.getElementById('perPhone').value = '';
+        document.getElementById('newName').value = '';
+        document.getElementById('newPhone').value = '';
     },
 
     addTask() {
-        const personKey = document.getElementById('taskPerson').value;
-        db.ref('people/' + personKey).once('value', s => {
-            const person = s.val();
+        const pKey = document.getElementById('selPerson').value;
+        if(!pKey) return alert("Lütfen önce bir personel seçin!");
+
+        db.ref('people/' + pKey).once('value', snap => {
+            const p = snap.val();
             const task = {
-                name: document.getElementById('taskName').value,
-                cat: document.getElementById('taskCat').value,
-                prio: document.getElementById('taskPrio').value,
-                start: document.getElementById('taskStart').value,
-                end: document.getElementById('taskEnd').value,
-                who: person.name,
-                phone: person.phone,
-                ts: Date.now()
+                desc: document.getElementById('jobDesc').value,
+                cat: document.getElementById('selCat').value,
+                prio: document.getElementById('selPrio').value,
+                start: document.getElementById('jobStart').value,
+                end: document.getElementById('jobEnd').value,
+                uName: p.name,
+                uPhone: p.phone,
+                at: Date.now()
             };
+            if(!task.desc || !task.end) return alert("İş detayı ve bitiş tarihi zorunludur!");
             
             db.ref('tasks').push(task).then(() => {
-                this.sendWhatsApp(task);
-                alert("Görev kaydedildi ve WhatsApp tetiklendi!");
+                this.sendWA(task);
+                document.getElementById('jobDesc').value = '';
             });
         });
     },
 
-    sendWhatsApp(t) {
-        const msg = `🚀 *YENİ GÖREV ATANDI*%0A%0A*İş:* ${t.name}%0A*Kategori:* ${t.cat}%0A*Bitiş:* ${t.end.replace('T',' ')}%0A*Aciliyet:* ${t.prio}%0A%0AKolay gelsin!`;
-        window.open(`https://wa.me/${t.phone}?text=${msg}`, '_blank');
+    sendWA(t) {
+        const msg = `🚀 *YENİ GÖREV ATAMASI*%0A%0A*İş:* ${t.desc}%0A*Kategori:* ${t.cat}%0A*Bitiş:* ${t.end.replace('T',' ')}%0A*Önem:* ${t.prio}`;
+        window.open(`https://wa.me/${t.uPhone}?text=${msg}`, '_blank');
     },
 
-    populateSelect(id, data) {
-        const el = document.getElementById(id);
-        el.innerHTML = Object.values(data).map(v => `<option value="${v}">${v}</option>`).join('');
-    },
-
-    populatePeople(data) {
-        const el = document.getElementById('taskPerson');
-        if(!data) return;
-        el.innerHTML = Object.keys(data).map(k => `<option value="${k}">${data[k].name}</option>`).join('');
-    },
-
-    renderTasks(data) {
+    render(data) {
         const container = document.getElementById('taskList');
-        if(!data) { container.innerHTML = ""; return; }
+        if(!data) { container.innerHTML = '<p style="text-align:center; color:gray;">Henüz görev atanmamış.</p>'; return; }
         
         container.innerHTML = Object.keys(data).reverse().map(k => {
             const t = data[k];
             return `
-                <div class="task-card ${t.prio === 'Acil' ? 'prio-high' : ''}">
+                <div class="task-card prio-${t.prio}">
                     <div class="task-header">
                         <div>
-                            <span class="badge" style="background:var(--primary); padding:2px 8px; border-radius:5px; font-size:10px;">${t.cat}</span>
-                            <h4 style="margin:5px 0;">${t.name}</h4>
+                            <span style="font-size:10px; background:#334155; padding:2px 6px; border-radius:4px;">${t.cat}</span>
+                            <h4 style="margin:8px 0;">${t.desc}</h4>
                         </div>
-                        <button onclick="db.ref('tasks/${k}').remove()" class="btn-delete" style="background:transparent; color:var(--danger)"><i class="fas fa-trash"></i></button>
+                        <button onclick="db.ref('tasks/${k}').remove()" style="width:auto; background:none; color:var(--danger); font-size:18px;"><i class="fas fa-times-circle"></i></button>
                     </div>
-                    <div class="task-meta">
-                        <span><i class="far fa-clock"></i> ${t.start.replace('T',' ')} / ${t.end.replace('T',' ')}</span>
-                        <span><i class="far fa-user"></i> ${t.who}</span>
-                        <span style="color:${t.prio === 'Acil' ? 'var(--danger)' : 'var(--success)'}">● ${t.prio}</span>
+                    <div class="meta">
+                        <span><i class="fas fa-user"></i> ${t.uName}</span>
+                        <span><i class="fas fa-calendar-alt"></i> ${t.end.replace('T', ' ')}</span>
+                        <span style="color:${t.prio === 'Acil' ? 'var(--danger)' : 'var(--wa)'}">● ${t.prio}</span>
                     </div>
-                    <button class="wa" onclick="manager.sendWhatsApp(${JSON.stringify(t).replace(/"/g, '&quot;')})">
-                        <i class="fab fa-whatsapp"></i> Yeniden Hatırlat
+                    <button class="wa-btn" onclick="app.sendWA(${JSON.stringify(t).replace(/"/g, '&quot;')})">
+                        <i class="fab fa-whatsapp"></i> Hatırlatıcı Gönder
                     </button>
                 </div>
             `;
@@ -202,7 +213,7 @@ const manager = {
     }
 };
 
-manager.init();
+app.init();
 </script>
 </body>
 </html>
