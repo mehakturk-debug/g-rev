@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Profesyonel İş Takip</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --danger: #ef4444; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Kart Yapıları */
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h2, h3 { margin-top: 0; color: var(--primary); font-size: 1.2rem; }
+
+        /* Form Elemanları */
+        .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        @media (min-width: 768px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+        
+        input, select, button { 
+            width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; 
+            box-sizing: border-box; font-size: 16px; /* Mobilde zoom yapmaması için 16px */
+        }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+        .btn-delete { background: var(--danger); padding: 8px; font-size: 12px; width: auto; }
+
+        /* Görev Listesi */
+        .task-list { margin-top: 20px; }
+        .task-item { 
+            background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;
+            border-left: 6px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .prio-Yüksek { border-left-color: var(--danger); }
+        .prio-Orta { border-left-color: #f59e0b; }
+        .prio-Düşük { border-left-color: #10b981; }
+
+        .task-details b { display: block; font-size: 1.1rem; }
+        .task-details span { font-size: 0.85rem; color: #64748b; }
+        
+        .badge { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="text-align:center; padding: 10px;">
+        <h1 style="margin:0; font-size: 1.5rem;">📅 Bulut İş Takip</h1>
+        <small id="syncStatus" style="color:green">● Senkronize Edildi</small>
+    </div>
+
+    <div class="card">
+        <h3>📂 Kategori Yönetimi</h3>
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="catInput" placeholder="Yeni kategori...">
+            <button onclick="addCategory()" style="width: 80px;">+</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📝 Yeni Görev</h3>
+        <div class="grid">
+            <select id="taskCategory"></select>
+            <input type="text" id="taskName" placeholder="İşin adı nedir?">
+            <select id="taskPriority">
+                <option>Düşük</option>
+                <option selected>Orta</option>
+                <option>Yüksek</option>
+            </select>
+            <input type="datetime-local" id="taskEnd">
+            <input type="text" id="taskAssignee" placeholder="Kime atandı?">
+            <button onclick="addTask()" style="grid-column: span 1;">Görevi Kaydet</button>
+        </div>
+    </div>
+
+    <div class="task-list" id="taskList">
+        <p style="text-align:center;">Yükleniyor...</p>
+    </div>
+</div>
+
+<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+<script>
+// --- SENİN FIREBASE BİLGİLERİN ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBUF3LdVqpHkC5Ha2YReluEY5cbe9ScKhg",
+  authDomain: "is-takip-sistemi-94c21.firebaseapp.com",
+  projectId: "is-takip-sistemi-94c21",
+  storageBucket: "is-takip-sistemi-94c21.firebasestorage.app",
+  messagingSenderId: "113312619940",
+  appId: "1:113312619940:web:59e4daaec3d9e8800a3531",
+  measurementId: "G-F0G7XM60S6",
+  databaseURL: "https://is-takip-sistemi-94c21-default-rtdb.firebaseio.com" // Otomatik ekledim
+};
+
+// Firebase Başlat
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// DOM Elemanları
+const taskListDiv = document.getElementById('taskList');
+const catSelect = document.getElementById('taskCategory');
+
+// 1. Kategorileri Dinle
+db.ref('categories').on('value', (snap) => {
+    const cats = snap.val() || ["Genel", "Acil", "Proje"];
+    catSelect.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+});
+
+function addCategory() {
+    const val = document.getElementById('catInput').value;
+    if(!val) return;
+    db.ref('categories').once('value', snap => {
+        const current = snap.val() || ["Genel", "Acil", "Proje"];
+        if(!current.includes(val)) {
+            current.push(val);
+            db.ref('categories').set(current);
+        }
+    });
+    document.getElementById('catInput').value = '';
+}
+
+// 2. Görevleri Dinle (Gerçek Zamanlı)
+db.ref('tasks').on('value', (snap) => {
+    const tasks = snap.val();
+    renderTasks(tasks);
+});
+
+function addTask() {
+    const task = {
+        name: document.getElementById('taskName').value,
+        cat: catSelect.value,
+        prio: document.getElementById('taskPriority').value,
+        end: document.getElementById('taskEnd').value,
+        who: document.getElementById('taskAssignee').value || "Belirtilmedi",
+        created: Date.now()
+    };
+
+    if(!task.name || !task.end) return alert("İş adı ve tarih zorunludur!");
+
+    db.ref('tasks').push(task);
+    // Formu temizle
+    document.getElementById('taskName').value = '';
+}
+
+function deleteTask(id) {
+    if(confirm("Bu görevi silmek istediğine emin misin?")) {
+        db.ref('tasks/' + id).remove();
+    }
+}
+
+function renderTasks(data) {
+    if(!data) {
+        taskListDiv.innerHTML = '<p style="text-align:center;">Henüz görev yok.</p>';
+        return;
+    }
+    
+    let html = '';
+    const keys = Object.keys(data).reverse(); // Yeniler üstte
+    keys.forEach(key => {
+        const t = data[key];
+        html += `
+            <div class="task-item prio-${t.prio}">
+                <div class="task-details">
+                    <span class="badge">${t.cat}</span>
+                    <b>${t.name}</b>
+                    <span>📅 ${new Date(t.end).toLocaleString('tr-TR')}</span>
+                    <span>👤 ${t.who}</span>
+                </div>
+                <button class="btn-delete" onclick="deleteTask('${key}')">Sil</button>
+            </div>
+        `;
+    });
+    taskListDiv.innerHTML = html;
+}
+
+// 3. Alarm Sistemi (30 saniyede bir kontrol)
+setInterval(() => {
+    const now = new Date().getTime();
+    db.ref('tasks').once('value', snap => {
+        const tasks = snap.val();
+        for(let id in tasks) {
+            const t = tasks[id];
+            const tEnd = new Date(t.end).getTime();
+            // Tam vaktinde mi? (1 dakikalık pencere)
+            if(Math.abs(now - tEnd) < 30000) {
+                document.getElementById('alarmSound').play();
+                if (Notification.permission === "granted") {
+                    new Notification("ZAMAN DOLDU!", { body: t.name });
+                }
+            }
+        }
+    });
+}, 30000);
+
+// Bildirim İzni
+if (Notification.permission !== "denied") {
+    Notification.requestPermission();
+}
+</script>
+</body>
+</html>
